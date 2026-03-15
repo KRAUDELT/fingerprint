@@ -1054,36 +1054,59 @@ set('val-creds', 'API restricted in modern browsers');
 // IP GEOLOCATION (public API, no key required)
 // ============================================================
 async function fetchIP() {
-  // Strategy 1: ipwho.is — free, HTTPS, no key required
-  try {
-    const res = await fetch('https://ipwho.is/');
-    const d = await res.json();
-    if (d.success) {
-      set('val-ip', d.ip, 'highlight');
-      set('val-geo', `${d.city}, ${d.region}, ${d.country} (${(d.latitude||0).toFixed(2)}, ${(d.longitude||0).toFixed(2)})`, 'highlight');
-      set('val-isp', or(d.connection && d.connection.isp));
-      set('val-asn', d.connection && d.connection.asn ? 'AS' + d.connection.asn + ' ' + (d.connection.org||'') : 'N/A');
-      set('val-proxy', d.type === 'hosting' ? '⚠️ Datacenter / Hosting IP' : '✓ No proxy detected', d.type === 'hosting' ? 'danger' : 'highlight');
-      return;
-    }
-  } catch(e) { /* fall through to next provider */ }
+  // Try multiple providers in sequence — all support HTTPS + browser CORS
  
-  // Strategy 2: ipapi.co — free tier, HTTPS, no key required
+  // 1. ipinfo.io — explicitly CORS-enabled for browsers, no key needed for basic fields
   try {
-    const res = await fetch('https://ipapi.co/json/');
-    const d = await res.json();
-    if (d.ip && !d.error) {
-      set('val-ip', d.ip, 'highlight');
-      set('val-geo', `${d.city}, ${d.region}, ${d.country_name} (${(d.latitude||0).toFixed(2)}, ${(d.longitude||0).toFixed(2)})`, 'highlight');
-      set('val-isp', or(d.org));
-      set('val-asn', or(d.asn));
-      set('val-proxy', '✓ Proxy data unavailable on free tier', 'highlight');
-      return;
+    const res = await fetch('https://ipinfo.io/json', { headers: { 'Accept': 'application/json' } });
+    if (res.ok) {
+      const d = await res.json();
+      if (d.ip) {
+        set('val-ip', d.ip, 'highlight');
+        const coords = d.loc ? d.loc.split(',') : ['0','0'];
+        set('val-geo', [d.city, d.region, d.country].filter(Boolean).join(', ') + ' (' + parseFloat(coords[0]).toFixed(2) + ', ' + parseFloat(coords[1]).toFixed(2) + ')', 'highlight');
+        set('val-isp', or(d.org));
+        set('val-asn', or(d.org));
+        set('val-proxy', d.privacy && d.privacy.vpn ? '⚠️ VPN Detected' : '✓ No proxy detected (basic check)', d.privacy && d.privacy.vpn ? 'danger' : 'highlight');
+        return;
+      }
     }
   } catch(e) { /* fall through */ }
  
-  // Both failed
-  ['val-ip','val-geo','val-isp','val-asn'].forEach(id => set(id, 'Lookup blocked — check network/CORS'));
+  // 2. freeipapi.com — free, HTTPS, CORS open
+  try {
+    const res = await fetch('https://freeipapi.com/api/json');
+    if (res.ok) {
+      const d = await res.json();
+      if (d.ipAddress) {
+        set('val-ip', d.ipAddress, 'highlight');
+        set('val-geo', [d.cityName, d.regionName, d.countryName].filter(Boolean).join(', ') + ' (' + (d.latitude||0).toFixed(2) + ', ' + (d.longitude||0).toFixed(2) + ')', 'highlight');
+        set('val-isp', 'Not available on this provider');
+        set('val-asn', 'Not available on this provider');
+        set('val-proxy', '✓ No proxy data on this provider', 'highlight');
+        return;
+      }
+    }
+  } catch(e) { /* fall through */ }
+ 
+  // 3. api64.ipify.org — only returns IP, but better than nothing
+  try {
+    const res = await fetch('https://api64.ipify.org?format=json');
+    if (res.ok) {
+      const d = await res.json();
+      if (d.ip) {
+        set('val-ip', d.ip, 'highlight');
+        set('val-geo', 'Geolocation unavailable');
+        set('val-isp', 'ISP lookup unavailable');
+        set('val-asn', 'ASN lookup unavailable');
+        set('val-proxy', 'Proxy check unavailable');
+        return;
+      }
+    }
+  } catch(e) { /* fall through */ }
+ 
+  // All providers failed
+  ['val-ip','val-geo','val-isp','val-asn'].forEach(id => set(id, 'All providers unreachable'));
   set('val-proxy', 'Could not check');
 }
 fetchIP();
