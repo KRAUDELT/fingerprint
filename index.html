@@ -3,832 +3,1018 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>You've Been Fingerprinted — Web Security Training</title>
+  <title>Browser Fingerprinting — Web Security Training | Anthony Kraudelt</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;600;700&family=Source+Code+Pro:wght@400;600&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet" />
   <style>
+    /* =====================================================
+       DESIGN SYSTEM — mirrors kraudelt.com aesthetic:
+       - Deep navy/charcoal dark background
+       - White & light gray text, centered single-column
+       - Thin horizontal dividers between full-width sections
+       - Clean sans-serif (Raleway headings, Open Sans body)
+       - Monospace for data values
+       - Subtle blue accent, no neon/glow excess
+       - Professional, restrained — FBI/cybersecurity tone
+    ===================================================== */
     :root {
-      --bg: #080c10;
-      --surface: #0d1117;
-      --border: #1e2d3d;
-      --accent: #00ff88;
-      --accent2: #ff3c5a;
-      --accent3: #3cb9ff;
-      --text: #c9d1d9;
-      --muted: #4a5568;
-      --card: #111820;
-      --glow: 0 0 20px rgba(0,255,136,0.15);
+      --bg:        #1a1a2e;
+      --bg-section:#16213e;
+      --bg-card:   #0f3460;
+      --bg-alt:    #1a1a2e;
+      --border:    rgba(255,255,255,0.08);
+      --accent:    #e94560;
+      --accent2:   #0f3460;
+      --blue:      #4fc3f7;
+      --white:     #ffffff;
+      --light:     #e0e6f0;
+      --muted:     #8892a4;
+      --danger:    #e94560;
+      --success:   #4caf7d;
+      --warn:      #f0a500;
+      --mono:      'Source Code Pro', 'Courier New', monospace;
+      --sans:      'Open Sans', sans-serif;
+      --head:      'Raleway', sans-serif;
     }
  
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
  
+    html { scroll-behavior: smooth; }
+ 
     body {
       background: var(--bg);
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
+      color: var(--light);
+      font-family: var(--sans);
       font-size: 15px;
-      line-height: 1.6;
+      line-height: 1.75;
       min-height: 100vh;
       overflow-x: hidden;
     }
  
-    /* Scanline overlay */
-    body::before {
-      content: '';
+    /* ---- NAV ---- */
+    nav {
       position: fixed;
-      inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,0,0,0.08) 2px,
-        rgba(0,0,0,0.08) 4px
-      );
-      pointer-events: none;
-      z-index: 1000;
-    }
- 
-    /* Noise texture */
-    body::after {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 999;
-      opacity: 0.4;
-    }
- 
-    /* HEADER */
-    .header {
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      background: rgba(15, 52, 96, 0.97);
+      backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--border);
-      padding: 1.5rem 2rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      position: sticky;
-      top: 0;
-      background: rgba(8,12,16,0.95);
-      backdrop-filter: blur(10px);
-      z-index: 100;
+      padding: 0 2.5rem;
+      height: 60px;
     }
  
-    .logo {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.6rem;
-      letter-spacing: 0.1em;
+    .nav-brand {
+      font-family: var(--head);
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--white);
+      text-decoration: none;
+    }
+ 
+    .nav-brand span { color: var(--accent); }
+ 
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+ 
+    .nav-links a {
+      font-family: var(--head);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+ 
+    .nav-links a:hover { color: var(--white); }
+ 
+    .nav-badge {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      background: rgba(233,69,96,0.15);
+      border: 1px solid var(--accent);
       color: var(--accent);
-      text-shadow: 0 0 15px rgba(0,255,136,0.4);
-    }
- 
-    .badge {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 0.7rem;
-      background: rgba(255,60,90,0.15);
-      border: 1px solid var(--accent2);
-      color: var(--accent2);
-      padding: 0.25rem 0.75rem;
+      padding: 0.2rem 0.7rem;
       border-radius: 2px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      animation: pulse-red 2s infinite;
+      letter-spacing: 0.08em;
+      animation: pulse-badge 2.5s infinite;
     }
  
-    @keyframes pulse-red {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(255,60,90,0.3); }
-      50% { box-shadow: 0 0 10px 4px rgba(255,60,90,0.1); }
+    @keyframes pulse-badge {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.55; }
     }
  
-    /* HERO */
+    /* ---- HERO ---- */
     .hero {
-      padding: 5rem 2rem 3rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       text-align: center;
+      padding: 6rem 2rem 4rem;
+      background: linear-gradient(160deg, #1a1a2e 0%, #0f3460 60%, #1a1a2e 100%);
       position: relative;
+      overflow: hidden;
     }
  
-    .hero-label {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 0.75rem;
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 120%, rgba(233,69,96,0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 80% 20%, rgba(79,195,247,0.05) 0%, transparent 60%);
+      pointer-events: none;
+    }
+ 
+    /* subtle grid lines */
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+ 
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
       letter-spacing: 0.25em;
-      color: var(--accent);
       text-transform: uppercase;
+      color: var(--accent);
       margin-bottom: 1.5rem;
       opacity: 0;
-      animation: fadeUp 0.6s 0.2s forwards;
+      animation: fadeUp 0.7s 0.3s forwards;
+      position: relative; z-index: 1;
     }
  
     .hero h1 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(3rem, 8vw, 7rem);
-      line-height: 0.95;
-      letter-spacing: 0.02em;
-      color: #fff;
-      text-shadow: 0 0 40px rgba(0,255,136,0.2);
-      opacity: 0;
-      animation: fadeUp 0.6s 0.4s forwards;
+      font-family: var(--head);
+      font-weight: 700;
+      font-size: clamp(2.4rem, 6vw, 5rem);
+      line-height: 1.1;
+      color: var(--white);
+      letter-spacing: -0.01em;
       margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.5s forwards;
+      position: relative; z-index: 1;
     }
  
-    .hero h1 span { color: var(--accent); }
+    .hero h1 em {
+      font-style: normal;
+      color: var(--accent);
+    }
  
     .hero-sub {
-      max-width: 560px;
-      margin: 0 auto 2rem;
+      max-width: 580px;
+      font-size: 1.05rem;
       color: var(--muted);
-      font-size: 1rem;
+      font-weight: 300;
+      margin-bottom: 3rem;
       opacity: 0;
-      animation: fadeUp 0.6s 0.6s forwards;
+      animation: fadeUp 0.7s 0.7s forwards;
+      position: relative; z-index: 1;
     }
  
-    .scan-bar {
+    /* Progress bar */
+    .scan-wrap {
       width: 100%;
-      max-width: 480px;
-      height: 3px;
-      background: var(--border);
-      border-radius: 2px;
-      margin: 0 auto 3rem;
-      overflow: hidden;
+      max-width: 460px;
       opacity: 0;
-      animation: fadeUp 0.6s 0.7s forwards;
+      animation: fadeUp 0.7s 0.9s forwards;
+      position: relative; z-index: 1;
     }
  
-    .scan-bar-fill {
+    .scan-label {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.05em;
+    }
+ 
+    .scan-track {
+      width: 100%;
+      height: 2px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 1px;
+      overflow: hidden;
+      margin-bottom: 0.8rem;
+    }
+ 
+    .scan-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--accent), var(--accent3));
       width: 0%;
-      transition: width 0.1s linear;
-      box-shadow: 0 0 10px rgba(0,255,136,0.6);
+      background: linear-gradient(90deg, var(--accent), var(--blue));
+      transition: width 0.15s linear;
     }
  
     .scan-status {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 0.8rem;
-      color: var(--accent);
-      margin-bottom: 3rem;
-      opacity: 0;
-      animation: fadeUp 0.6s 0.8s forwards;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--blue);
+      letter-spacing: 0.05em;
       min-height: 1.2em;
+      text-align: left;
+    }
+ 
+    .hero-arrow {
+      margin-top: 3rem;
+      color: var(--muted);
+      font-size: 1.4rem;
+      animation: bounce 2s infinite;
+      position: relative; z-index: 1;
+      text-decoration: none;
+    }
+ 
+    @keyframes bounce {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(6px); }
     }
  
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
+      from { opacity: 0; transform: translateY(18px); }
       to   { opacity: 1; transform: translateY(0); }
     }
  
-    /* MAIN GRID */
-    .container {
-      max-width: 1200px;
+    /* ---- SECTION SHELL ---- */
+    section {
+      padding: 5rem 2rem;
+      border-top: 1px solid var(--border);
+    }
+ 
+    section:nth-child(even) { background: var(--bg-section); }
+    section:nth-child(odd)  { background: var(--bg); }
+ 
+    .section-inner {
+      max-width: 960px;
       margin: 0 auto;
-      padding: 0 2rem 4rem;
+    }
+ 
+    .section-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.6rem;
     }
  
     .section-title {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 0.7rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--border);
+      font-family: var(--head);
+      font-weight: 700;
+      font-size: 1.9rem;
+      color: var(--white);
+      letter-spacing: -0.01em;
+      margin-bottom: 0.5rem;
     }
  
-    .grid {
+    .section-desc {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 2.5rem;
+      max-width: 620px;
+    }
+ 
+    .divider {
+      width: 48px;
+      height: 2px;
+      background: var(--accent);
+      margin: 1rem 0 2rem;
+    }
+ 
+    /* ---- FINGERPRINT HASH HERO CARD ---- */
+    .hash-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(79,195,247,0.2);
+      border-left: 3px solid var(--blue);
+      padding: 2rem 2.5rem;
+      margin-bottom: 3rem;
+    }
+ 
+    .hash-card-label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 0.75rem;
+    }
+ 
+    .hash-value {
+      font-family: var(--mono);
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      color: var(--white);
+      letter-spacing: 0.08em;
+      word-break: break-all;
+      margin-bottom: 1rem;
+    }
+ 
+    .hash-value .h-red   { color: var(--accent); }
+    .hash-value .h-blue  { color: var(--blue); }
+ 
+    .explainer {
+      background: rgba(255,255,255,0.03);
+      border-left: 2px solid rgba(255,255,255,0.1);
+      padding: 0.75rem 1rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: 0.75rem;
+    }
+ 
+    .explainer strong { color: var(--light); font-weight: 600; }
+ 
+    /* ---- DATA GRID ---- */
+    .data-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 1px;
       background: var(--border);
       border: 1px solid var(--border);
-      margin-bottom: 1px;
-    }
- 
-    .card {
-      background: var(--card);
-      padding: 1.5rem;
-      position: relative;
-      overflow: hidden;
-      transition: background 0.2s;
-    }
- 
-    .card:hover { background: #131b24; }
- 
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0;
-      width: 2px; height: 0;
-      background: var(--accent);
-      transition: height 0.3s;
-    }
- 
-    .card:hover::before { height: 100%; }
- 
-    .card-label {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 0.65rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--accent3);
       margin-bottom: 0.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
     }
  
-    .card-label::before {
-      content: '';
-      display: inline-block;
-      width: 6px; height: 6px;
-      background: var(--accent3);
-      border-radius: 50%;
-      box-shadow: 0 0 6px var(--accent3);
+    .data-card {
+      background: var(--bg-section);
+      padding: 1.25rem 1.5rem;
+      position: relative;
+      transition: background 0.15s;
     }
  
-    .card-value {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 0.9rem;
-      color: #fff;
+    .data-card:hover { background: #1c2a4a; }
+ 
+    section:nth-child(even) .data-card         { background: #111827; }
+    section:nth-child(even) .data-card:hover   { background: #1a2436; }
+ 
+    .dc-label {
+      font-family: var(--head);
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+ 
+    .dc-value {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--light);
       word-break: break-all;
       line-height: 1.5;
     }
  
-    .card-value.loading {
-      color: var(--muted);
-      animation: blink 1s infinite;
-    }
+    .dc-value.loading { color: var(--muted); animation: blink 1.2s infinite; }
+    .dc-value.hi      { color: var(--white); }
+    .dc-value.danger  { color: var(--accent); }
+    .dc-value.ok      { color: var(--success); }
+    .dc-value.warn    { color: var(--warn); }
  
     @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
+      0%,100% { opacity: 1; } 50% { opacity: 0.3; }
     }
  
-    .card-value.highlight { color: var(--accent); }
-    .card-value.danger { color: var(--accent2); }
+    .dc-wide { grid-column: 1 / -1; }
  
-    /* Wide card */
-    .card-wide {
-      grid-column: 1 / -1;
-    }
- 
-    /* Fingerprint hash display */
-    .hash-display {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--accent);
-      padding: 2rem;
-      margin-bottom: 1px;
-      position: relative;
-    }
- 
-    .hash-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.4rem;
-      letter-spacing: 0.1em;
-      color: var(--accent);
-      margin-bottom: 0.5rem;
-    }
- 
-    .hash-value {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 1.1rem;
-      color: #fff;
-      word-break: break-all;
-      letter-spacing: 0.05em;
-    }
- 
-    .hash-value span { color: var(--accent2); }
- 
-    /* Canvas fingerprint */
-    #canvas-fp { display: none; }
-    #canvas-preview {
-      width: 100%;
-      max-width: 300px;
-      height: 60px;
-      border: 1px solid var(--border);
-      border-radius: 2px;
-      margin-top: 0.75rem;
-    }
- 
-    /* Explanation panel */
-    .explanation {
-      background: rgba(60,185,255,0.05);
-      border: 1px solid rgba(60,185,255,0.15);
-      border-radius: 2px;
-      padding: 1rem 1.5rem;
-      margin-top: 0.75rem;
-      font-size: 0.82rem;
-      color: #8899aa;
-      line-height: 1.6;
-    }
- 
-    .explanation strong { color: var(--accent3); font-weight: 500; }
- 
-    /* Permissions section */
+    /* ---- PERMISSIONS TAGS ---- */
     .perm-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
+      display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;
     }
  
     .perm-tag {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 0.7rem;
-      padding: 0.2rem 0.6rem;
-      border-radius: 2px;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      padding: 0.2rem 0.65rem;
       border: 1px solid;
+      border-radius: 2px;
+      letter-spacing: 0.05em;
     }
  
-    .perm-tag.granted { border-color: var(--accent); color: var(--accent); background: rgba(0,255,136,0.05); }
-    .perm-tag.denied  { border-color: var(--accent2); color: var(--accent2); background: rgba(255,60,90,0.05); }
-    .perm-tag.prompt  { border-color: var(--muted); color: var(--muted); background: transparent; }
+    .perm-tag.granted { border-color: var(--success); color: var(--success); background: rgba(76,175,125,0.06); }
+    .perm-tag.denied  { border-color: var(--accent);  color: var(--accent);  background: rgba(233,69,96,0.06); }
+    .perm-tag.prompt  { border-color: var(--muted);   color: var(--muted);   background: transparent; }
  
-    /* Plugin list */
-    .plugin-list { margin-top: 0.5rem; }
-    .plugin-item {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 0.75rem;
-      color: var(--text);
-      padding: 0.2rem 0;
-      border-bottom: 1px solid rgba(30,45,61,0.5);
+    /* ---- UNIQUENESS BAR ---- */
+    .uniqueness-wrap { margin-top: 1rem; }
+ 
+    .u-bar-track {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      margin: 0.75rem 0 0.4rem;
+      overflow: hidden;
     }
  
-    /* Education banner */
-    .edu-banner {
-      background: rgba(255,60,90,0.05);
-      border: 1px solid rgba(255,60,90,0.2);
-      padding: 1.5rem 2rem;
-      margin-bottom: 2rem;
+    .u-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--success), var(--warn), var(--accent));
+      border-radius: 2px;
+      transition: width 1.5s cubic-bezier(0.4,0,0.2,1);
+    }
+ 
+    .u-pct {
+      font-family: var(--mono);
+      font-size: 1.6rem;
+      color: var(--white);
+      font-weight: 600;
+    }
+ 
+    /* ---- EDU NOTICE ---- */
+    .edu-notice {
+      background: rgba(233,69,96,0.06);
+      border: 1px solid rgba(233,69,96,0.25);
+      padding: 1.25rem 1.75rem;
       display: flex;
-      gap: 1.5rem;
+      gap: 1.25rem;
       align-items: flex-start;
+      margin-bottom: 3rem;
     }
  
-    .edu-icon {
-      font-size: 2rem;
-      flex-shrink: 0;
-      line-height: 1;
-    }
+    .edu-icon { font-size: 1.5rem; flex-shrink: 0; line-height: 1.4; }
  
     .edu-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 1.1rem;
-      color: var(--accent2);
-      letter-spacing: 0.1em;
-      margin-bottom: 0.4rem;
-    }
- 
-    .edu-text {
+      font-family: var(--head);
+      font-weight: 700;
       font-size: 0.85rem;
-      color: var(--muted);
-      line-height: 1.6;
-    }
- 
-    /* Footer */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 2rem;
-      text-align: center;
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 0.7rem;
-      color: var(--muted);
       letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.35rem;
     }
  
-    /* Progress indicator */
-    .progress-ring {
-      position: absolute;
-      top: 1.5rem; right: 1.5rem;
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 8px var(--accent);
-      animation: pulse-green 1.5s infinite;
+    .edu-body { font-size: 0.82rem; color: var(--muted); line-height: 1.65; }
+ 
+    /* ---- CANVAS PREVIEW ---- */
+    #canvas-fp     { display: none; }
+    #canvas-preview {
+      display: block;
+      width: 100%;
+      max-width: 340px;
+      height: 60px;
+      border: 1px solid var(--border);
+      margin-top: 0.75rem;
+      background: #000;
     }
  
-    .progress-ring.done { animation: none; background: var(--accent3); box-shadow: 0 0 6px var(--accent3); }
- 
-    @keyframes pulse-green {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.4); opacity: 0.6; }
+    /* ---- FOOTER ---- */
+    footer {
+      background: #0d1117;
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 2rem;
+      text-align: center;
     }
  
-    /* Responsive */
-    @media (max-width: 600px) {
-      .grid { grid-template-columns: 1fr; }
-      .header { flex-direction: column; gap: 0.75rem; }
-      .hero h1 { font-size: 3rem; }
+    .footer-name {
+      font-family: var(--head);
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--white);
+      margin-bottom: 0.5rem;
+    }
+ 
+    .footer-name span { color: var(--accent); }
+ 
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      list-style: none;
+      margin: 1rem 0;
+    }
+ 
+    .footer-links a {
+      font-family: var(--head);
+      font-size: 0.68rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+ 
+    .footer-links a:hover { color: var(--white); }
+ 
+    .footer-copy {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+      font-family: var(--mono);
+    }
+ 
+    /* ---- RESPONSIVE ---- */
+    @media (max-width: 640px) {
+      nav { padding: 0 1.25rem; }
+      .nav-links { display: none; }
+      .hero h1 { font-size: 2.2rem; }
+      .data-grid { grid-template-columns: 1fr; }
+      .footer-links { flex-wrap: wrap; gap: 1rem; }
     }
   </style>
 </head>
 <body>
  
-<header class="header">
-  <div class="logo">FINGERPRINT.DEMO</div>
-  <div class="badge">🔴 Live Collection Active</div>
-</header>
+<!-- ===================== NAV ===================== -->
+<nav>
+  <a href="#home" class="nav-brand">Anthony <span>Kraudelt</span></a>
+  <ul class="nav-links">
+    <li><a href="#network">Network</a></li>
+    <li><a href="#browser">Browser</a></li>
+    <li><a href="#screen">Display</a></li>
+    <li><a href="#advanced">Advanced</a></li>
+    <li><a href="#analysis">Analysis</a></li>
+    <li><a href="https://kraudelt.com" target="_blank">← Back to Site</a></li>
+  </ul>
+  <span class="nav-badge">● Live Collection</span>
+</nav>
  
-<!-- Hidden canvas for fingerprinting -->
+<!-- Hidden canvas -->
 <canvas id="canvas-fp" width="300" height="60"></canvas>
  
-<section class="hero">
-  <p class="hero-label">// Web Security Training Module 03</p>
-  <h1>You've been<br><span>fingerprinted.</span></h1>
-  <p class="hero-sub">The moment you loaded this page, your browser began revealing your identity — without asking permission. Below is everything we collected.</p>
-  <div class="scan-bar"><div class="scan-bar-fill" id="scan-fill"></div></div>
-  <p class="scan-status" id="scan-status">Initializing collection routines...</p>
+<!-- ===================== HERO ===================== -->
+<section class="hero" id="home">
+  <p class="hero-eyebrow">// Web Security Training Module — Browser Fingerprinting</p>
+  <h1>You Have Been<br><em>Fingerprinted.</em></h1>
+  <p class="hero-sub">The moment this page loaded, your browser began disclosing your identity — without asking permission. Everything collected is displayed below.</p>
+ 
+  <div class="scan-wrap">
+    <div class="scan-label">
+      <span>COLLECTION IN PROGRESS</span>
+      <span id="scan-pct">0%</span>
+    </div>
+    <div class="scan-track">
+      <div class="scan-fill" id="scan-fill"></div>
+    </div>
+    <div class="scan-status" id="scan-status">Initializing...</div>
+  </div>
+ 
+  <a href="#notice" class="hero-arrow">↓</a>
 </section>
  
-<div class="container">
- 
-  <!-- Education notice -->
-  <div class="edu-banner">
-    <div class="edu-icon">⚠️</div>
-    <div>
-      <div class="edu-title">Training Environment — Educational Use Only</div>
-      <div class="edu-text">This page demonstrates browser fingerprinting techniques used by advertisers, trackers, and threat actors. No data is transmitted or stored anywhere. This is a client-side demo designed to raise awareness. All collection happens locally in your browser.</div>
-    </div>
-  </div>
- 
-  <!-- Fingerprint Hash -->
-  <div class="hash-display" id="hash-display">
-    <div class="hash-title">// Your Browser Fingerprint Hash</div>
-    <div class="hash-value" id="fp-hash"><span>computing...</span></div>
-    <div class="explanation">
-      <strong>What is this?</strong> A fingerprint hash is a single string derived by combining many browser attributes. Even without cookies, this hash can uniquely identify ~94% of internet users across sessions and devices. This is how sites track you after you clear cookies.
-    </div>
-  </div>
- 
-  <!-- Section: Network -->
-  <p class="section-title">// 01 — Network &amp; Identity</p>
-  <div class="grid">
-    <div class="card" id="card-ip">
-      <div class="card-label">IP Address (Approx)</div>
-      <div class="card-value loading" id="val-ip">Resolving...</div>
-      <div class="explanation"><strong>How:</strong> Your public IP is visible on every web request. Even with a VPN, the VPN provider's IP is visible and often geolocatable.</div>
-    </div>
-    <div class="card" id="card-geo">
-      <div class="card-label">Approximate Location</div>
-      <div class="card-value loading" id="val-geo">Resolving...</div>
-      <div class="explanation"><strong>How:</strong> IP geolocation databases map IP ranges to physical locations, usually accurate to city level without any GPS permission.</div>
-    </div>
-    <div class="card" id="card-isp">
-      <div class="card-label">ISP / Organization</div>
-      <div class="card-value loading" id="val-isp">Resolving...</div>
-    </div>
-    <div class="card" id="card-asn">
-      <div class="card-label">ASN (Network Owner)</div>
-      <div class="card-value loading" id="val-asn">Resolving...</div>
-    </div>
-    <div class="card" id="card-timezone">
-      <div class="card-label">Timezone</div>
-      <div class="card-value highlight" id="val-timezone">—</div>
-    </div>
-    <div class="card" id="card-lang">
-      <div class="card-label">Browser Language(s)</div>
-      <div class="card-value highlight" id="val-lang">—</div>
-    </div>
-    <div class="card" id="card-time">
-      <div class="card-label">Local Time</div>
-      <div class="card-value highlight" id="val-time">—</div>
-    </div>
-    <div class="card" id="card-proxy">
-      <div class="card-label">Proxy / VPN Detected</div>
-      <div class="card-value loading" id="val-proxy">Checking...</div>
-      <div class="explanation"><strong>How:</strong> IP lookup services flag datacenter IPs, known VPN exit nodes, and Tor exit relays.</div>
-    </div>
-  </div>
- 
-  <!-- Section: Browser -->
-  <p class="section-title" style="margin-top:2rem">// 02 — Browser &amp; Device</p>
-  <div class="grid">
-    <div class="card">
-      <div class="card-label">User Agent String</div>
-      <div class="card-value" id="val-ua">—</div>
-      <div class="explanation"><strong>How:</strong> Sent automatically with every HTTP request. Reveals browser name, version, OS, and sometimes device model.</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Browser Name / Version</div>
-      <div class="card-value highlight" id="val-browser">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Operating System</div>
-      <div class="card-value highlight" id="val-os">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Device Type</div>
-      <div class="card-value" id="val-device">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Platform</div>
-      <div class="card-value" id="val-platform">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">CPU Cores (Logical)</div>
-      <div class="card-value" id="val-cores">—</div>
-      <div class="explanation"><strong>Why this matters:</strong> Combined with other signals, hardware specs narrow down your device model dramatically.</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Device Memory (GB)</div>
-      <div class="card-value" id="val-mem">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Touch Support / Max Points</div>
-      <div class="card-value" id="val-touch">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Do Not Track Header</div>
-      <div class="card-value danger" id="val-dnt">—</div>
-      <div class="explanation"><strong>Note:</strong> DNT is almost universally <em>ignored</em> by websites.</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Cookie Support</div>
-      <div class="card-value" id="val-cookie">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">JavaScript Enabled</div>
-      <div class="card-value highlight" id="val-js">Yes (obviously)</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Private / Incognito Mode</div>
-      <div class="card-value danger" id="val-private">Checking...</div>
-      <div class="explanation"><strong>How:</strong> Incognito detection uses filesystem quota checks — storage limits differ in private mode.</div>
-    </div>
-  </div>
- 
-  <!-- Section: Screen -->
-  <p class="section-title" style="margin-top:2rem">// 03 — Screen &amp; Display</p>
-  <div class="grid">
-    <div class="card">
-      <div class="card-label">Screen Resolution</div>
-      <div class="card-value highlight" id="val-res">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Available Screen Area</div>
-      <div class="card-value" id="val-avail">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Color Depth / Bit Depth</div>
-      <div class="card-value" id="val-color">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Device Pixel Ratio</div>
-      <div class="card-value" id="val-dpr">—</div>
-      <div class="explanation"><strong>Why:</strong> DPR reveals HiDPI/Retina displays, common on modern MacBooks and flagship phones.</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Viewport Size (Window)</div>
-      <div class="card-value" id="val-viewport">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Color Scheme Preference</div>
-      <div class="card-value" id="val-scheme">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Reduced Motion Preference</div>
-      <div class="card-value" id="val-motion">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">HDR Support</div>
-      <div class="card-value" id="val-hdr">—</div>
-    </div>
-  </div>
- 
-  <!-- Section: Advanced -->
-  <p class="section-title" style="margin-top:2rem">// 04 — Advanced Fingerprinting Vectors</p>
-  <div class="grid">
-    <div class="card card-wide">
-      <div class="card-label">Canvas Fingerprint</div>
-      <div class="card-value" id="val-canvas">Computing...</div>
-      <canvas id="canvas-preview"></canvas>
-      <div class="explanation">
-        <strong>How canvas fingerprinting works:</strong> A hidden canvas element renders text and shapes. Due to subtle differences in GPU drivers, OS font rendering, and anti-aliasing, the resulting pixels vary per device. The pixel array is hashed to create a device-specific signature. This cannot be blocked without disabling canvas entirely.
+<!-- ===================== NOTICE ===================== -->
+<section id="notice">
+  <div class="section-inner">
+    <div class="edu-notice">
+      <div class="edu-icon">⚠</div>
+      <div>
+        <div class="edu-title">Training Environment — Educational Use Only</div>
+        <div class="edu-body">This page demonstrates browser fingerprinting techniques actively used by advertisers, data brokers, and threat actors. <strong>No data is transmitted or stored anywhere.</strong> All collection runs entirely within your browser. This demonstration is part of a cybersecurity awareness training curriculum.</div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-label">WebGL Vendor</div>
-      <div class="card-value" id="val-gl-vendor">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">WebGL Renderer (GPU)</div>
-      <div class="card-value danger" id="val-gl-renderer">—</div>
-      <div class="explanation"><strong>High value signal.</strong> Reveals your exact GPU model and driver. Extremely stable across sessions.</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Installed Fonts (Sample)</div>
-      <div class="card-value" id="val-fonts">Detecting...</div>
-      <div class="explanation"><strong>How:</strong> Font detection measures text rendering width differences. Fonts installed on your system create a unique combination.</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Audio Fingerprint</div>
-      <div class="card-value" id="val-audio">Computing...</div>
-      <div class="explanation"><strong>How:</strong> The Web Audio API processes a signal through an oscillator. Floating-point math differences in audio hardware produce unique output values.</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Browser Plugins / Extensions</div>
-      <div class="card-value" id="val-plugins">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Installed MIME Types</div>
-      <div class="card-value" id="val-mime">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">WebRTC Local IP (if exposed)</div>
-      <div class="card-value danger" id="val-webrtc">Checking...</div>
-      <div class="explanation"><strong>High risk:</strong> WebRTC can leak your <em>real</em> local IP even behind a VPN, bypassing network-level anonymization.</div>
-    </div>
-  </div>
  
-  <!-- Section: Permissions -->
-  <p class="section-title" style="margin-top:2rem">// 05 — Browser Permissions &amp; APIs</p>
-  <div class="grid">
-    <div class="card card-wide">
-      <div class="card-label">Permission States (no prompts shown)</div>
-      <div class="perm-list" id="perm-list">
-        <span class="perm-tag prompt">Loading...</span>
-      </div>
-      <div class="explanation">
-        <strong>How:</strong> The Permissions API lets sites silently check permission states without requesting them. A site now knows if you've previously granted camera/mic access to ANY site.
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-label">Battery Level</div>
-      <div class="card-value" id="val-battery">Checking...</div>
-      <div class="explanation"><strong>Battery API</strong> can track users across sites based on charge level + discharge rate — a unique pairing now mostly blocked.</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Network Connection Type</div>
-      <div class="card-value" id="val-connection">—</div>
-    </div>
-    <div class="card">
-      <div class="card-label">Number of Saved Passwords</div>
-      <div class="card-value danger" id="val-creds">Checking...</div>
-      <div class="explanation"><strong>Credential Management API</strong> can sometimes infer login state or saved credentials count.</div>
-    </div>
-    <div class="card">
-      <div class="card-label">IndexedDB / LocalStorage Available</div>
-      <div class="card-value" id="val-storage">—</div>
-    </div>
-  </div>
- 
-  <!-- Summary -->
-  <p class="section-title" style="margin-top:2rem">// 06 — Uniqueness Analysis</p>
-  <div class="grid">
-    <div class="card card-wide">
-      <div class="progress-ring done"></div>
-      <div class="card-label">Estimated Fingerprint Uniqueness</div>
-      <div class="card-value highlight" id="val-uniqueness">—</div>
-      <div class="explanation">
-        <strong>Research finding:</strong> Studies by the EFF (Panopticlick) and others show that browser fingerprinting alone can uniquely identify approximately 83–94% of users without any cookies. Combining IP + fingerprint raises this above 99%.
-        <br><br>
-        <strong>How to protect yourself:</strong> Use Firefox with the arkenfox user.js config, Tor Browser (which normalizes fingerprints across users), or Brave (which adds noise to canvas/audio APIs). Browser extensions like Canvas Blocker add randomization. A VPN helps mask IP but does not stop fingerprinting.
+    <!-- Fingerprint Hash -->
+    <div class="hash-card" id="hash-card">
+      <div class="hash-card-label">// Your Composite Browser Fingerprint Hash</div>
+      <div class="hash-value" id="fp-hash"><span class="h-blue">Computing...</span></div>
+      <div class="explainer">
+        <strong>What is this?</strong> A fingerprint hash is a single identifier derived by combining many browser attributes into one value. Even after clearing cookies, this hash can re-identify approximately 83–94% of internet users across sessions. This is how modern tracking works without storing anything on your device.
       </div>
     </div>
   </div>
+</section>
  
-</div>
+<!-- ===================== SECTION 01: NETWORK ===================== -->
+<section id="network">
+  <div class="section-inner">
+    <p class="section-eyebrow">// 01 — Network &amp; Identity</p>
+    <h2 class="section-title">Network Exposure</h2>
+    <div class="divider"></div>
+    <p class="section-desc">Every web request carries your public IP address. From that single value, significant personal context can be inferred without any additional permissions.</p>
  
+    <div class="data-grid">
+      <div class="data-card">
+        <div class="dc-label">Public IP Address</div>
+        <div class="dc-value loading hi" id="val-ip">Resolving...</div>
+        <div class="explainer"><strong>How:</strong> Sent automatically with every HTTP request. Visible to every server you connect to.</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Approximate Location</div>
+        <div class="dc-value loading hi" id="val-geo">Resolving...</div>
+        <div class="explainer"><strong>How:</strong> IP geolocation databases map IP ranges to physical locations — typically accurate to city level with no GPS needed.</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">ISP / Organization</div>
+        <div class="dc-value loading" id="val-isp">Resolving...</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">ASN (Autonomous System)</div>
+        <div class="dc-value loading" id="val-asn">Resolving...</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">VPN / Proxy Detection</div>
+        <div class="dc-value loading" id="val-proxy">Checking...</div>
+        <div class="explainer"><strong>How:</strong> Lookup services flag known datacenter IPs, VPN exit nodes, and Tor relays by cross-referencing ASN data.</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Timezone</div>
+        <div class="dc-value hi" id="val-timezone">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Browser Language(s)</div>
+        <div class="dc-value hi" id="val-lang">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Local Date &amp; Time</div>
+        <div class="dc-value" id="val-time">—</div>
+      </div>
+    </div>
+  </div>
+</section>
+ 
+<!-- ===================== SECTION 02: BROWSER ===================== -->
+<section id="browser">
+  <div class="section-inner">
+    <p class="section-eyebrow">// 02 — Browser &amp; Device</p>
+    <h2 class="section-title">Browser Identity</h2>
+    <div class="divider"></div>
+    <p class="section-desc">Your browser transmits an extensive identity string with every request, and JavaScript exposes additional hardware and configuration details.</p>
+ 
+    <div class="data-grid">
+      <div class="data-card dc-wide">
+        <div class="dc-label">User-Agent String</div>
+        <div class="dc-value" id="val-ua">—</div>
+        <div class="explainer"><strong>How:</strong> Sent in the HTTP request header automatically. Reveals browser name, version, OS, and sometimes device model without any JavaScript.</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Browser Name &amp; Version</div>
+        <div class="dc-value hi" id="val-browser">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Operating System</div>
+        <div class="dc-value hi" id="val-os">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Device Type</div>
+        <div class="dc-value" id="val-device">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Platform</div>
+        <div class="dc-value" id="val-platform">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">CPU Cores (Logical)</div>
+        <div class="dc-value" id="val-cores">—</div>
+        <div class="explainer"><strong>Why it matters:</strong> Combined with other signals, CPU core count narrows the field of possible device models significantly.</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Device Memory (approx.)</div>
+        <div class="dc-value" id="val-mem">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Touch Support / Max Points</div>
+        <div class="dc-value" id="val-touch">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Do Not Track Setting</div>
+        <div class="dc-value danger" id="val-dnt">—</div>
+        <div class="explainer"><strong>Note:</strong> The DNT header is almost universally ignored by websites and ad networks.</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Cookies Enabled</div>
+        <div class="dc-value" id="val-cookie">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">JavaScript Enabled</div>
+        <div class="dc-value ok">Yes — this page requires it</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Private / Incognito Mode</div>
+        <div class="dc-value loading" id="val-private">Checking...</div>
+        <div class="explainer"><strong>How:</strong> Storage quota limits differ in private browsing modes, making detection possible without permission.</div>
+      </div>
+    </div>
+  </div>
+</section>
+ 
+<!-- ===================== SECTION 03: SCREEN ===================== -->
+<section id="screen">
+  <div class="section-inner">
+    <p class="section-eyebrow">// 03 — Screen &amp; Display</p>
+    <h2 class="section-title">Display Configuration</h2>
+    <div class="divider"></div>
+    <p class="section-desc">Screen properties are accessible to every website you visit and contribute meaningfully to a unique device profile.</p>
+ 
+    <div class="data-grid">
+      <div class="data-card">
+        <div class="dc-label">Screen Resolution</div>
+        <div class="dc-value hi" id="val-res">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Available Screen Area</div>
+        <div class="dc-value" id="val-avail">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Color Depth</div>
+        <div class="dc-value" id="val-color">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Device Pixel Ratio</div>
+        <div class="dc-value" id="val-dpr">—</div>
+        <div class="explainer"><strong>Why:</strong> Reveals HiDPI / Retina displays — common on MacBooks and flagship smartphones.</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Viewport (Window) Size</div>
+        <div class="dc-value" id="val-viewport">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Color Scheme Preference</div>
+        <div class="dc-value" id="val-scheme">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Reduced Motion Preference</div>
+        <div class="dc-value" id="val-motion">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">HDR Display Support</div>
+        <div class="dc-value" id="val-hdr">—</div>
+      </div>
+    </div>
+  </div>
+</section>
+ 
+<!-- ===================== SECTION 04: ADVANCED ===================== -->
+<section id="advanced">
+  <div class="section-inner">
+    <p class="section-eyebrow">// 04 — Advanced Fingerprinting Vectors</p>
+    <h2 class="section-title">Hardware-Level Signals</h2>
+    <div class="divider"></div>
+    <p class="section-desc">These techniques go beyond simple browser properties and exploit rendering hardware, audio subsystems, and font rendering to generate device-specific signatures.</p>
+ 
+    <div class="data-grid">
+      <div class="data-card dc-wide">
+        <div class="dc-label">Canvas Fingerprint</div>
+        <div class="dc-value" id="val-canvas">Computing...</div>
+        <canvas id="canvas-preview"></canvas>
+        <div class="explainer">
+          <strong>How canvas fingerprinting works:</strong> A hidden canvas renders text and shapes. GPU drivers, OS font rendering, and anti-aliasing algorithms produce subtly different pixel outputs per device. The pixel array is hashed into a device-specific signature that cannot be blocked without disabling the canvas API entirely.
+        </div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">WebGL Vendor</div>
+        <div class="dc-value" id="val-gl-vendor">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">WebGL Renderer (GPU Model)</div>
+        <div class="dc-value danger" id="val-gl-renderer">—</div>
+        <div class="explainer"><strong>High-entropy signal.</strong> Exposes your exact GPU model and driver version — extremely stable across sessions and reboots.</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Installed Fonts (Sample)</div>
+        <div class="dc-value" id="val-fonts">Detecting...</div>
+        <div class="explainer"><strong>How:</strong> Canvas text-width measurements differ by installed font. The unique combination of fonts on your system creates a consistent profile.</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Audio Fingerprint</div>
+        <div class="dc-value" id="val-audio">Computing...</div>
+        <div class="explainer"><strong>How:</strong> The Web Audio API routes a signal through an oscillator. Floating-point processing differences in audio hardware produce a unique numeric output per device.</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Browser Plugins</div>
+        <div class="dc-value" id="val-plugins">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Supported MIME Types</div>
+        <div class="dc-value" id="val-mime">—</div>
+      </div>
+      <div class="data-card dc-wide">
+        <div class="dc-label">WebRTC Local IP Leak</div>
+        <div class="dc-value loading danger" id="val-webrtc">Checking...</div>
+        <div class="explainer">
+          <strong>Critical risk:</strong> WebRTC peer connection negotiation can expose your real local network IP address — and in some cases your true public IP — even when using a VPN. This bypasses network-level anonymization entirely.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+ 
+<!-- ===================== SECTION 05: PERMISSIONS ===================== -->
+<section id="permissions">
+  <div class="section-inner">
+    <p class="section-eyebrow">// 05 — Permissions &amp; APIs</p>
+    <h2 class="section-title">Silent Permission Queries</h2>
+    <div class="divider"></div>
+    <p class="section-desc">The Permissions API allows a site to check your permission states silently — no dialog is ever shown to you.</p>
+ 
+    <div class="data-grid">
+      <div class="data-card dc-wide">
+        <div class="dc-label">Permission States — Queried Without Prompting You</div>
+        <div class="perm-list" id="perm-list">
+          <span class="perm-tag prompt">Loading...</span>
+        </div>
+        <div class="explainer" style="margin-top:1rem">
+          <strong>Why this matters:</strong> If you previously granted camera or microphone access to any site, a different site can now silently detect that — and use it to infer behavioral or demographic data about you.
+        </div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Battery Level &amp; Status</div>
+        <div class="dc-value" id="val-battery">Checking...</div>
+        <div class="explainer"><strong>Battery API:</strong> Battery level combined with discharge rate forms a highly unique pairing. Most browsers have now restricted this API due to its tracking potential.</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Network Connection Type</div>
+        <div class="dc-value" id="val-connection">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Storage APIs Available</div>
+        <div class="dc-value" id="val-storage">—</div>
+      </div>
+      <div class="data-card">
+        <div class="dc-label">Credential / Password Store</div>
+        <div class="dc-value danger" id="val-creds">—</div>
+      </div>
+    </div>
+  </div>
+</section>
+ 
+<!-- ===================== SECTION 06: ANALYSIS ===================== -->
+<section id="analysis">
+  <div class="section-inner">
+    <p class="section-eyebrow">// 06 — Uniqueness Analysis</p>
+    <h2 class="section-title">How Unique Are You?</h2>
+    <div class="divider"></div>
+ 
+    <div class="data-grid">
+      <div class="data-card dc-wide">
+        <div class="dc-label">Estimated Fingerprint Uniqueness</div>
+        <div class="uniqueness-wrap">
+          <div class="u-pct" id="u-pct">—</div>
+          <div class="u-bar-track"><div class="u-bar-fill" id="u-bar"></div></div>
+          <div class="dc-value" id="val-uniqueness" style="margin-top:0.25rem">Computing...</div>
+        </div>
+        <div class="explainer" style="margin-top:1.25rem">
+          <strong>Research context:</strong> The EFF's Panopticlick project and subsequent academic studies show that browser fingerprinting alone uniquely identifies approximately 83–94% of users without cookies. Combining IP address with fingerprint data raises accuracy above 99%.
+          <br><br>
+          <strong>How to reduce your exposure:</strong> Use <strong>Tor Browser</strong> (which normalizes fingerprints across all users), <strong>Firefox</strong> with the arkenfox user.js hardening config, or <strong>Brave</strong> (which injects noise into canvas and audio APIs). A VPN masks your IP but does not prevent fingerprinting. Browser extensions such as Canvas Blocker add randomization to canvas and audio outputs.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+ 
+<!-- ===================== FOOTER ===================== -->
 <footer>
-  FINGERPRINT.DEMO — WEB SECURITY TRAINING // CLIENT-SIDE ONLY — NO DATA TRANSMITTED // FOR EDUCATIONAL USE
+  <div class="footer-name">Anthony <span>Kraudelt</span></div>
+  <ul class="footer-links">
+    <li><a href="https://kraudelt.com" target="_blank">kraudelt.com</a></li>
+    <li><a href="https://www.linkedin.com/in/anthonykraudelt/" target="_blank">LinkedIn</a></li>
+    <li><a href="https://www.credly.com/users/anthonykraudelt" target="_blank">Credly</a></li>
+  </ul>
+  <p class="footer-copy">Web Security Training — Client-Side Demo — No Data Transmitted &nbsp;|&nbsp; © 2026 Anthony Kraudelt</p>
 </footer>
  
+<!-- ===================== JAVASCRIPT ===================== -->
 <script>
 // ============================================================
-// FINGERPRINT DEMO — TRAINING SITE
-// All processing is local. Nothing is sent to any server
-// (except the ip-api.com lookup which is public/anonymous).
+//  BROWSER FINGERPRINTING DEMO
+//  All processing is local. No data leaves your browser
+//  except the IP geolocation API call (public, anonymous).
 // ============================================================
  
 const set = (id, val, cls) => {
   const el = document.getElementById(id);
   if (!el) return;
   el.textContent = val;
-  el.className = 'card-value' + (cls ? ' ' + cls : '');
+  el.className = 'dc-value' + (cls ? ' ' + cls : '');
 };
+const or = (v, fb = 'Not Available') => v || fb;
  
-const or = (v, fallback='Not Available') => v || fallback;
- 
-// ---- Scan bar animation ----
-let progress = 0;
-const fill = document.getElementById('scan-fill');
-const status = document.getElementById('scan-status');
-const steps = [
-  [10, 'Collecting user agent data...'],
-  [20, 'Reading screen parameters...'],
-  [35, 'Querying network identity...'],
-  [48, 'Computing canvas fingerprint...'],
-  [60, 'Probing WebGL hardware...'],
-  [70, 'Running audio fingerprint...'],
-  [80, 'Checking permissions silently...'],
-  [88, 'Detecting installed fonts...'],
-  [95, 'Checking WebRTC IP leak...'],
-  [100, 'Collection complete.'],
+// ---- Scan progress ----
+const fill   = document.getElementById('scan-fill');
+const pctEl  = document.getElementById('scan-pct');
+const statEl = document.getElementById('scan-status');
+const steps  = [
+  [8,  'Reading user-agent and browser properties...'],
+  [18, 'Querying screen and display parameters...'],
+  [30, 'Fetching network identity via IP lookup...'],
+  [44, 'Computing canvas fingerprint...'],
+  [56, 'Probing WebGL hardware identifiers...'],
+  [67, 'Running audio fingerprint analysis...'],
+  [76, 'Querying permission states silently...'],
+  [85, 'Detecting installed fonts via canvas timing...'],
+  [93, 'Checking WebRTC for IP leak...'],
+  [100,'Collection complete.'],
 ];
 let si = 0;
 function advanceScan() {
   if (si < steps.length) {
-    progress = steps[si][0];
-    fill.style.width = progress + '%';
-    status.textContent = steps[si][1];
-    si++;
-    setTimeout(advanceScan, 600 + Math.random() * 400);
+    const [pct, msg] = steps[si++];
+    fill.style.width = pct + '%';
+    pctEl.textContent = pct + '%';
+    statEl.textContent = msg;
+    setTimeout(advanceScan, 550 + Math.random() * 350);
   }
 }
 advanceScan();
  
 // ============================================================
-// BASIC BROWSER DATA
+//  BROWSER & DEVICE
 // ============================================================
 const ua = navigator.userAgent;
 set('val-ua', ua);
  
-// Parse browser
 function parseBrowser(ua) {
-  if (/Edg\//.test(ua))   return 'Microsoft Edge ' + (ua.match(/Edg\/([\d.]+)/)||['','?'])[1];
-  if (/OPR\//.test(ua))   return 'Opera ' + (ua.match(/OPR\/([\d.]+)/)||['','?'])[1];
-  if (/Firefox\//.test(ua)) return 'Firefox ' + (ua.match(/Firefox\/([\d.]+)/)||['','?'])[1];
-  if (/Chrome\//.test(ua)) return 'Chrome ' + (ua.match(/Chrome\/([\d.]+)/)||['','?'])[1];
+  if (/Edg\//.test(ua))     return 'Microsoft Edge '   + (ua.match(/Edg\/([\d.]+)/)||['','?'])[1];
+  if (/OPR\//.test(ua))     return 'Opera '            + (ua.match(/OPR\/([\d.]+)/)||['','?'])[1];
+  if (/Firefox\//.test(ua)) return 'Firefox '          + (ua.match(/Firefox\/([\d.]+)/)||['','?'])[1];
+  if (/Chrome\//.test(ua))  return 'Chrome '           + (ua.match(/Chrome\/([\d.]+)/)||['','?'])[1];
   if (/Safari\//.test(ua) && /Version\//.test(ua)) return 'Safari ' + (ua.match(/Version\/([\d.]+)/)||['','?'])[1];
-  return 'Unknown';
+  return 'Unknown Browser';
 }
  
-// Parse OS
 function parseOS(ua) {
-  if (/Windows NT 10/.test(ua)) return 'Windows 10/11';
-  if (/Windows NT/.test(ua)) return 'Windows (older)';
+  if (/Windows NT 10/.test(ua)) return 'Windows 10 / 11';
+  if (/Windows NT/.test(ua))    return 'Windows (Legacy)';
   if (/Mac OS X/.test(ua)) {
     const v = ua.match(/Mac OS X ([\d_]+)/);
-    return 'macOS ' + (v ? v[1].replace(/_/g,'.') : '');
+    return 'macOS ' + (v ? v[1].replace(/_/g, '.') : '');
   }
   if (/Android/.test(ua)) return 'Android ' + (ua.match(/Android ([\d.]+)/)||['','?'])[1];
-  if (/iPhone|iPad/.test(ua)) return 'iOS ' + (ua.match(/OS ([\d_]+)/)||['','?'])[1].replace(/_/g,'.');
-  if (/Linux/.test(ua)) return 'Linux';
-  if (/CrOS/.test(ua)) return 'ChromeOS';
+  if (/iPhone|iPad/.test(ua)) return 'iOS ' + ((ua.match(/OS ([\d_]+)/)||['','?'])[1]).replace(/_/g,'.');
+  if (/CrOS/.test(ua))   return 'ChromeOS';
+  if (/Linux/.test(ua))  return 'Linux';
   return 'Unknown OS';
 }
  
 function parseDevice(ua) {
-  if (/Mobile|Android.*Mobile/.test(ua)) return '📱 Mobile';
-  if (/iPad|Tablet/.test(ua)) return '📟 Tablet';
-  return '💻 Desktop';
+  if (/Mobile|Android.*Mobile/.test(ua)) return 'Mobile Phone';
+  if (/iPad|Tablet/.test(ua))            return 'Tablet';
+  return 'Desktop / Laptop';
 }
  
-set('val-browser', parseBrowser(ua), 'highlight');
-set('val-os', parseOS(ua), 'highlight');
-set('val-device', parseDevice(ua));
+set('val-browser',  parseBrowser(ua), 'hi');
+set('val-os',       parseOS(ua), 'hi');
+set('val-device',   parseDevice(ua));
 set('val-platform', or(navigator.platform));
-set('val-cores', or(navigator.hardwareConcurrency?.toString(), 'Not disclosed'));
-set('val-mem', navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'Not disclosed');
-set('val-lang', (navigator.languages || [navigator.language]).join(', '), 'highlight');
-set('val-dnt', navigator.doNotTrack === '1' ? '✓ Enabled (but widely ignored)' : navigator.doNotTrack === '0' ? '✗ Explicitly disabled' : 'Not set', 'danger');
+set('val-cores',    navigator.hardwareConcurrency ? navigator.hardwareConcurrency + ' cores' : 'Not disclosed');
+set('val-mem',      navigator.deviceMemory ? navigator.deviceMemory + ' GB (approx.)' : 'Not disclosed');
+set('val-lang',     (navigator.languages || [navigator.language]).join(', '), 'hi');
+set('val-dnt',
+  navigator.doNotTrack === '1' ? 'Enabled (widely ignored by sites)' :
+  navigator.doNotTrack === '0' ? 'Explicitly disabled' : 'Not set',
+  'danger'
+);
 set('val-cookie', navigator.cookieEnabled ? 'Enabled' : 'Disabled');
  
 const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-set('val-timezone', tz, 'highlight');
- 
+set('val-timezone', tz, 'hi');
 const now = new Date();
-set('val-time', now.toLocaleTimeString() + ' — ' + now.toLocaleDateString(undefined, {weekday:'long', year:'numeric', month:'long', day:'numeric'}));
- 
-// Touch
-const touch = navigator.maxTouchPoints > 0;
-set('val-touch', touch ? `Yes (max ${navigator.maxTouchPoints} points)` : 'No touch support');
+set('val-time', now.toLocaleTimeString() + '  —  ' + now.toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' }));
+set('val-touch', navigator.maxTouchPoints > 0 ? 'Yes — max ' + navigator.maxTouchPoints + ' points' : 'No touch support detected');
  
 // ============================================================
-// SCREEN
+//  SCREEN
 // ============================================================
-set('val-res', `${screen.width} × ${screen.height}`, 'highlight');
-set('val-avail', `${screen.availWidth} × ${screen.availHeight}`);
-set('val-color', `${screen.colorDepth}-bit color / ${screen.pixelDepth}-bit pixel depth`);
-set('val-dpr', window.devicePixelRatio?.toFixed(2) || '1.00');
-set('val-viewport', `${window.innerWidth} × ${window.innerHeight} px`);
-set('val-scheme', window.matchMedia('(prefers-color-scheme: dark)').matches ? '🌙 Dark mode' : '☀️ Light mode');
-set('val-motion', window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'Reduced motion preferred' : 'Normal motion');
-set('val-hdr', window.matchMedia('(dynamic-range: high)').matches ? 'HDR Supported' : 'SDR Only');
+set('val-res',      screen.width + ' × ' + screen.height + ' px', 'hi');
+set('val-avail',    screen.availWidth + ' × ' + screen.availHeight + ' px');
+set('val-color',    screen.colorDepth + '-bit color depth');
+set('val-dpr',      (window.devicePixelRatio || 1).toFixed(2) + 'x');
+set('val-viewport', window.innerWidth + ' × ' + window.innerHeight + ' px');
+set('val-scheme',   window.matchMedia('(prefers-color-scheme: dark)').matches ? 'Dark Mode' : 'Light Mode');
+set('val-motion',   window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'Reduced Motion Preferred' : 'Standard Motion');
+set('val-hdr',      window.matchMedia('(dynamic-range: high)').matches ? 'HDR Supported' : 'SDR Only');
  
-// Storage
 const hasIDB = !!window.indexedDB;
 const hasLS  = (() => { try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return true; } catch(e) { return false; } })();
-set('val-storage', `IndexedDB: ${hasIDB?'✓':'✗'} | LocalStorage: ${hasLS?'✓':'✗'}`);
+set('val-storage', 'IndexedDB: ' + (hasIDB?'Available':'Unavailable') + '   |   LocalStorage: ' + (hasLS?'Available':'Unavailable'));
  
 // ============================================================
-// CANVAS FINGERPRINT
+//  CANVAS FINGERPRINT
 // ============================================================
 function canvasFingerprint() {
   const canvas = document.getElementById('canvas-fp');
-  const ctx = canvas.getContext('2d');
- 
+  const ctx    = canvas.getContext('2d');
   ctx.textBaseline = 'top';
   ctx.font = "14px 'Arial'";
-  ctx.fillStyle = '#f60';
+  ctx.fillStyle = '#e94560';
   ctx.fillRect(125, 1, 62, 20);
-  ctx.fillStyle = '#069';
-  ctx.fillText('BrowserFP 🖖🏽 1.0', 2, 15);
-  ctx.fillStyle = 'rgba(102,204,0,0.9)';
-  ctx.fillText('BrowserFP 🖖🏽 1.0', 4, 17);
+  ctx.fillStyle = '#4fc3f7';
+  ctx.fillText('BrowserFP 🖥 1.0', 2, 15);
+  ctx.fillStyle = 'rgba(79,195,247,0.7)';
+  ctx.fillText('BrowserFP 🖥 1.0', 4, 17);
  
-  // Draw to visible preview
   const preview = document.getElementById('canvas-preview');
-  const pCtx = preview.getContext('2d');
+  const pCtx    = preview.getContext('2d');
   pCtx.drawImage(canvas, 0, 0, preview.width, preview.height);
  
   const data = canvas.toDataURL();
@@ -844,157 +1030,131 @@ const canvasHash = canvasFingerprint();
 set('val-canvas', 'Hash: 0x' + canvasHash);
  
 // ============================================================
-// WEBGL
+//  WEBGL
 // ============================================================
 function getWebGL() {
   try {
-    const c = document.createElement('canvas');
+    const c  = document.createElement('canvas');
     const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
     if (!gl) return { vendor: 'Not supported', renderer: 'Not supported' };
     const dbg = gl.getExtension('WEBGL_debug_renderer_info');
     return {
-      vendor:   dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR),
+      vendor:   dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL)   : gl.getParameter(gl.VENDOR),
       renderer: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
     };
   } catch(e) { return { vendor: 'Error', renderer: 'Error' }; }
 }
  
 const wgl = getWebGL();
-set('val-gl-vendor', or(wgl.vendor));
+set('val-gl-vendor',   or(wgl.vendor));
 set('val-gl-renderer', or(wgl.renderer), 'danger');
  
 // ============================================================
-// AUDIO FINGERPRINT
+//  AUDIO FINGERPRINT
 // ============================================================
 function audioFingerprint(cb) {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
-    const osc = ctx.createOscillator();
-    const analyser = ctx.createAnalyser();
-    const gain = ctx.createGain();
-    const processor = ctx.createScriptProcessor(4096, 1, 1);
- 
-    gain.gain.value = 0;
-    osc.type = 'triangle';
+    const ctx  = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
+    const osc  = ctx.createOscillator();
+    const analyser   = ctx.createAnalyser();
+    const gain       = ctx.createGain();
+    const processor  = ctx.createScriptProcessor(4096, 1, 1);
+    gain.gain.value  = 0;
+    osc.type         = 'triangle';
     osc.connect(analyser);
     analyser.connect(processor);
     processor.connect(gain);
     gain.connect(ctx.destination);
- 
-    let fingerprint = '';
-    processor.onaudioprocess = function(e) {
+    processor.onaudioprocess = function() {
       const data = new Float32Array(analyser.frequencyBinCount);
       analyser.getFloatFrequencyData(data);
-      fingerprint = data.slice(0, 30).reduce((acc, v) => acc + Math.abs(v), 0).toFixed(6);
-      processor.disconnect();
-      osc.disconnect();
-      ctx.close();
-      cb(fingerprint);
+      const fp = data.slice(0, 30).reduce((a, v) => a + Math.abs(v), 0).toFixed(6);
+      processor.disconnect(); osc.disconnect(); ctx.close();
+      cb(fp);
     };
- 
     osc.start(0);
-  } catch(e) {
-    cb('Not available');
-  }
+  } catch(e) { cb('Not available'); }
 }
  
-audioFingerprint(fp => {
-  set('val-audio', 'Value: ' + fp);
-});
+audioFingerprint(fp => set('val-audio', 'Value: ' + fp));
  
 // ============================================================
-// PLUGINS & MIME
+//  PLUGINS & MIME
 // ============================================================
 const plugins = Array.from(navigator.plugins || []).map(p => p.name).slice(0, 8);
-set('val-plugins', plugins.length ? plugins.join(' | ') : 'No plugins detected (Chrome hides these)');
+set('val-plugins', plugins.length ? plugins.join('  |  ') : 'No plugins detected (Chrome restricts this)');
  
 const mimes = Array.from(navigator.mimeTypes || []).map(m => m.type).slice(0, 6);
-set('val-mime', mimes.length ? mimes.join(', ') : 'None / Hidden');
+set('val-mime', mimes.length ? mimes.join(', ') : 'None reported');
  
 // ============================================================
-// FONT DETECTION
+//  FONT DETECTION
 // ============================================================
 function detectFonts() {
   const testFonts = [
-    'Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Verdana',
-    'Georgia', 'Palatino', 'Garamond', 'Bookman', 'Trebuchet MS',
-    'Comic Sans MS', 'Impact', 'Calibri', 'Cambria', 'Consolas',
-    'Menlo', 'Monaco', 'Lucida Console', 'Tahoma', 'Franklin Gothic Medium',
-    'Futura', 'Gill Sans', 'Optima', 'Baskerville', 'Didot',
-    'American Typewriter', 'Copperplate', 'Papyrus'
+    'Arial','Helvetica','Times New Roman','Courier New','Verdana',
+    'Georgia','Palatino','Garamond','Trebuchet MS','Comic Sans MS',
+    'Impact','Calibri','Cambria','Consolas','Menlo','Monaco',
+    'Lucida Console','Tahoma','Futura','Gill Sans','Optima',
+    'Baskerville','Didot','American Typewriter','Copperplate','Papyrus'
   ];
- 
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
-  const testStr = 'mmmmmmmmmmlli';
-  const baseFont = 'monospace';
-  ctx.font = `72px ${baseFont}`;
-  const baseW = ctx.measureText(testStr).width;
- 
-  const found = testFonts.filter(font => {
-    ctx.font = `72px '${font}', ${baseFont}`;
-    return ctx.measureText(testStr).width !== baseW;
+  ctx.font = '72px monospace';
+  const baseW = ctx.measureText('mmmmmmmmmmlli').width;
+  return testFonts.filter(f => {
+    ctx.font = "72px '" + f + "', monospace";
+    return ctx.measureText('mmmmmmmmmmlli').width !== baseW;
   });
- 
-  return found;
 }
  
 const fonts = detectFonts();
-set('val-fonts', fonts.length ? `${fonts.length} detected: ${fonts.slice(0,8).join(', ')}` + (fonts.length > 8 ? '...' : '') : 'Detection blocked');
+set('val-fonts', fonts.length
+  ? fonts.length + ' fonts detected: ' + fonts.slice(0, 8).join(', ') + (fonts.length > 8 ? '...' : '')
+  : 'Detection blocked or no distinctive fonts found');
  
 // ============================================================
-// WEBRTC IP LEAK
+//  WEBRTC IP LEAK
 // ============================================================
 function detectWebRTC() {
   try {
-    const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+    const pc  = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
     const ips = new Set();
     pc.createDataChannel('');
     pc.createOffer().then(o => pc.setLocalDescription(o));
     pc.onicecandidate = e => {
       if (!e || !e.candidate) return;
-      const re = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/;
-      const match = re.exec(e.candidate.candidate);
-      if (match) {
-        ips.add(match[1]);
-        set('val-webrtc', [...ips].join(', '), 'danger');
-      }
+      const m = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/.exec(e.candidate.candidate);
+      if (m) { ips.add(m[1]); set('val-webrtc', [...ips].join(', '), 'danger'); }
     };
     setTimeout(() => {
       pc.close();
       if (!document.getElementById('val-webrtc').textContent.includes('.')) {
-        set('val-webrtc', 'No leak detected (or blocked)', 'highlight');
+        set('val-webrtc', 'No leak detected (or blocked by browser)', 'ok');
       }
     }, 3000);
-  } catch(e) {
-    set('val-webrtc', 'API not available');
-  }
+  } catch(e) { set('val-webrtc', 'WebRTC API unavailable'); }
 }
 detectWebRTC();
  
 // ============================================================
-// PERMISSIONS API
+//  PERMISSIONS API
 // ============================================================
-const permNames = [
-  'camera', 'microphone', 'geolocation',
-  'notifications', 'clipboard-read', 'clipboard-write',
-  'midi', 'push'
-];
- 
+const permNames = ['camera','microphone','geolocation','notifications','clipboard-read','clipboard-write','midi','push'];
 async function checkPerms() {
   const list = document.getElementById('perm-list');
   list.innerHTML = '';
   for (const name of permNames) {
     try {
-      const res = await navigator.permissions.query({ name });
+      const r   = await navigator.permissions.query({ name });
       const tag = document.createElement('span');
-      tag.className = `perm-tag ${res.state === 'granted' ? 'granted' : res.state === 'denied' ? 'denied' : 'prompt'}`;
-      tag.textContent = `${name}: ${res.state}`;
+      tag.className = 'perm-tag ' + (r.state === 'granted' ? 'granted' : r.state === 'denied' ? 'denied' : 'prompt');
+      tag.textContent = name + ': ' + r.state;
       list.appendChild(tag);
     } catch(e) {
       const tag = document.createElement('span');
       tag.className = 'perm-tag prompt';
-      tag.textContent = `${name}: n/a`;
+      tag.textContent = name + ': n/a';
       list.appendChild(tag);
     }
   }
@@ -1002,141 +1162,129 @@ async function checkPerms() {
 checkPerms();
  
 // ============================================================
-// BATTERY API
+//  BATTERY
 // ============================================================
 if (navigator.getBattery) {
   navigator.getBattery().then(b => {
-    const pct = Math.round(b.level * 100);
-    const charging = b.charging ? '⚡ Charging' : '🔋 On Battery';
-    set('val-battery', `${pct}% — ${charging}`);
+    set('val-battery', Math.round(b.level * 100) + '%  —  ' + (b.charging ? 'Charging' : 'On Battery'));
   }).catch(() => set('val-battery', 'Blocked by browser'));
 } else {
-  set('val-battery', 'API not supported');
+  set('val-battery', 'Battery API not supported in this browser');
 }
  
 // ============================================================
-// NETWORK CONNECTION
+//  NETWORK CONNECTION
 // ============================================================
 const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-if (conn) {
-  set('val-connection', `${or(conn.effectiveType,'?').toUpperCase()} — DL: ${or(conn.downlink?.toString(),'?')} Mbps — RTT: ${or(conn.rtt?.toString(),'?')}ms`);
-} else {
-  set('val-connection', 'Connection API not available');
-}
+set('val-connection', conn
+  ? ((conn.effectiveType || '').toUpperCase() || '?') + '  —  DL: ' + (conn.downlink || '?') + ' Mbps  —  RTT: ' + (conn.rtt || '?') + 'ms'
+  : 'Network Information API not available');
  
 // ============================================================
-// INCOGNITO / PRIVATE MODE DETECTION
+//  INCOGNITO / PRIVATE MODE
 // ============================================================
 async function detectPrivate() {
   try {
-    const quota = await navigator.storage.estimate();
-    const isPrivate = quota.quota < 120000000; // ~120MB threshold
-    set('val-private', isPrivate ? '⚠️ Likely Private/Incognito Mode' : 'Normal browsing session', isPrivate ? 'danger' : 'highlight');
+    const q = await navigator.storage.estimate();
+    const isP = q.quota < 120000000;
+    set('val-private', isP ? 'Likely Private / Incognito Mode' : 'Normal Browsing Session', isP ? 'danger' : 'ok');
   } catch(e) {
-    // Safari FileSystem method
     try {
       const fs = window.RequestFileSystem || window.webkitRequestFileSystem;
-      if (!fs) throw 'no fs';
-      fs(window.TEMPORARY, 100, () => set('val-private', 'Normal browsing session', 'highlight'), () => set('val-private', '⚠️ Likely Private/Incognito Mode', 'danger'));
-    } catch(e2) {
-      set('val-private', 'Could not determine');
-    }
+      if (!fs) throw '';
+      fs(window.TEMPORARY, 100,
+        () => set('val-private', 'Normal Browsing Session', 'ok'),
+        () => set('val-private', 'Likely Private / Incognito Mode', 'danger')
+      );
+    } catch(e2) { set('val-private', 'Could not determine'); }
   }
 }
 detectPrivate();
  
-// ============================================================
-// CREDENTIAL STORE (heuristic)
-// ============================================================
-set('val-creds', 'API restricted in modern browsers');
+set('val-creds', 'Credential API restricted in modern browsers');
  
 // ============================================================
-// IP GEOLOCATION (public API, no key required)
+//  IP GEOLOCATION
 // ============================================================
 async function fetchIP() {
-  // Try multiple providers in sequence — all support HTTPS + browser CORS
- 
-  // 1. ipinfo.io — explicitly CORS-enabled for browsers, no key needed for basic fields
-  try {
-    const res = await fetch('https://ipinfo.io/json', { headers: { 'Accept': 'application/json' } });
-    if (res.ok) {
-      const d = await res.json();
-      if (d.ip) {
-        set('val-ip', d.ip, 'highlight');
-        const coords = d.loc ? d.loc.split(',') : ['0','0'];
-        set('val-geo', [d.city, d.region, d.country].filter(Boolean).join(', ') + ' (' + parseFloat(coords[0]).toFixed(2) + ', ' + parseFloat(coords[1]).toFixed(2) + ')', 'highlight');
-        set('val-isp', or(d.org));
-        set('val-asn', or(d.org));
-        set('val-proxy', d.privacy && d.privacy.vpn ? '⚠️ VPN Detected' : '✓ No proxy detected (basic check)', d.privacy && d.privacy.vpn ? 'danger' : 'highlight');
-        return;
-      }
-    }
-  } catch(e) { /* fall through */ }
- 
-  // 2. freeipapi.com — free, HTTPS, CORS open
   try {
     const res = await fetch('https://freeipapi.com/api/json');
     if (res.ok) {
       const d = await res.json();
       if (d.ipAddress) {
-        set('val-ip', d.ipAddress, 'highlight');
-        set('val-geo', [d.cityName, d.regionName, d.countryName].filter(Boolean).join(', ') + ' (' + (d.latitude||0).toFixed(2) + ', ' + (d.longitude||0).toFixed(2) + ')', 'highlight');
-        set('val-isp', 'Not available on this provider');
-        set('val-asn', 'Not available on this provider');
-        set('val-proxy', '✓ No proxy data on this provider', 'highlight');
+        set('val-ip', d.ipAddress, 'hi');
+        set('val-geo', [d.cityName, d.regionName, d.countryName].filter(Boolean).join(', ')
+          + (d.latitude ? ' (' + Number(d.latitude).toFixed(2) + ', ' + Number(d.longitude).toFixed(2) + ')' : ''), 'hi');
+        set('val-isp', 'Not available on free tier');
+        set('val-asn', 'Not available on free tier');
+        set('val-proxy', d.isProxy ? 'Proxy Detected' : 'No proxy detected', d.isProxy ? 'danger' : 'ok');
         return;
       }
     }
-  } catch(e) { /* fall through */ }
+  } catch(e) {}
  
-  // 3. api64.ipify.org — only returns IP, but better than nothing
   try {
-    const res = await fetch('https://api64.ipify.org?format=json');
+    const res = await fetch('https://ipinfo.io/json');
     if (res.ok) {
       const d = await res.json();
       if (d.ip) {
-        set('val-ip', d.ip, 'highlight');
-        set('val-geo', 'Geolocation unavailable');
-        set('val-isp', 'ISP lookup unavailable');
-        set('val-asn', 'ASN lookup unavailable');
-        set('val-proxy', 'Proxy check unavailable');
+        set('val-ip', d.ip, 'hi');
+        set('val-geo', [d.city, d.region, d.country].filter(Boolean).join(', ') + (d.loc ? ' (' + d.loc + ')' : ''), 'hi');
+        set('val-isp', or(d.org));
+        set('val-asn', or(d.org));
+        set('val-proxy', 'Proxy data unavailable on free tier');
         return;
       }
     }
-  } catch(e) { /* fall through */ }
+  } catch(e) {}
  
-  // All providers failed
+  try {
+    const res = await fetch('https://api.country.is/');
+    if (res.ok) {
+      const d = await res.json();
+      if (d.ip) {
+        set('val-ip', d.ip, 'hi');
+        set('val-geo', d.country ? 'Country code: ' + d.country : 'Location unavailable', 'hi');
+        set('val-isp', 'Not available'); set('val-asn', 'Not available');
+        set('val-proxy', 'Not available');
+        return;
+      }
+    }
+  } catch(e) {}
+ 
   ['val-ip','val-geo','val-isp','val-asn'].forEach(id => set(id, 'All providers unreachable'));
   set('val-proxy', 'Could not check');
 }
 fetchIP();
  
 // ============================================================
-// COMPOSITE FINGERPRINT HASH
+//  COMPOSITE FINGERPRINT HASH
 // ============================================================
 setTimeout(() => {
   const components = [
     ua, screen.width, screen.height, screen.colorDepth,
     navigator.hardwareConcurrency, navigator.deviceMemory,
     tz, navigator.language, window.devicePixelRatio,
-    canvasHash, wgl.renderer, fonts.join(','),
-    navigator.platform
+    canvasHash, wgl.renderer, fonts.join(','), navigator.platform
   ].join('||');
  
-  let hash = 5381;
+  let h = 5381;
   for (let i = 0; i < components.length; i++) {
-    hash = ((hash << 5) + hash) ^ components.charCodeAt(i);
-    hash = hash >>> 0;
+    h = ((h << 5) + h) ^ components.charCodeAt(i);
+    h = h >>> 0;
   }
-  const hexHash = hash.toString(16).toUpperCase().padStart(8, '0');
-  // Format as groups for readability
-  const formatted = hexHash.match(/.{1,4}/g).join('-');
-  document.getElementById('fp-hash').innerHTML =
-    `<span style="color:var(--accent)">${formatted}</span>-${canvasHash.slice(0,4)}-${Math.abs(components.length).toString(16).toUpperCase()}`;
+  const hex = h.toString(16).toUpperCase().padStart(8, '0');
+  const parts = hex.match(/.{1,4}/g);
  
-  // Estimate uniqueness (rough heuristic based on data points)
+  document.getElementById('fp-hash').innerHTML =
+    '<span class="h-blue">' + parts[0] + '-' + parts[1] + '</span>' +
+    '<span style="color:var(--muted)">-</span>' +
+    '<span class="h-red">'  + canvasHash.slice(0,4) + '-' + canvasHash.slice(4) + '</span>' +
+    '<span style="color:var(--muted)">-</span>' +
+    '<span class="h-blue">' + Math.abs(components.length).toString(16).toUpperCase().padStart(4,'0') + '</span>';
+ 
   const signals = [
-    wgl.renderer !== 'Not supported',
+    wgl.renderer !== 'Not supported' && wgl.renderer !== 'Error',
     fonts.length > 5,
     canvasHash !== '00000000',
     navigator.hardwareConcurrency > 0,
@@ -1145,7 +1293,9 @@ setTimeout(() => {
   ].filter(Boolean).length;
  
   const pct = Math.min(99.8, 78 + signals * 3.2).toFixed(1);
-  set('val-uniqueness', `~${pct}% unique across internet users (${signals}/6 high-entropy signals collected)`, 'highlight');
+  document.getElementById('u-pct').textContent = pct + '%';
+  document.getElementById('u-bar').style.width = pct + '%';
+  set('val-uniqueness', signals + ' of 6 high-entropy signals collected — approximately ' + pct + '% unique across all internet users');
 }, 4000);
 </script>
 </body>
